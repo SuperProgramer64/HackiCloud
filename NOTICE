@@ -1,0 +1,16 @@
+The MIT license covers this project's source code and original documentation.
+It does not grant rights to Apple, Xiaomi or POCO product photographs, logos,
+trademarks or fonts. Product photographs in the promotional composition remain
+the property of their respective rights holders. Their source URLs and credits
+are listed in assets/image-sources.json. No font file is distributed.
+
+The banner was manually composed from manufacturer product photographs.
+HackiCloud is an independent project, not endorsed or approved by Apple,
+Xiaomi or POCO. No proprietary Apple framework, SDK, firmware or application
+binary is included. Compiled helpers in the local distribution are built from
+this project's own source code.
+
+The AuthKit interception point was studied using the public HakiOS kernel
+project, Martinvlba/hakios-xnu-kernel, commit cdc5541,
+userland/src/inject_akd.c. Transport, permissions, bounded message validation,
+Mac providers and catalog integration are implemented in this project's source.

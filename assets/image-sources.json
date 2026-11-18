@@ -1,0 +1,14 @@
+{
+  "composition": "Manual composite of manufacturer product images; no generative product imagery",
+  "macbook": {
+    "page": "https://www.apple.com/macbook-pro/",
+    "image": "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mbp14-spaceblack-select-202410?wid=1600&hei=1100&fmt=png-alpha&.v=1728916305295",
+    "credit": "Apple Inc."
+  },
+  "phone": {
+    "page": "https://www.mibrasil.com.br/smartphone-poco-x6-pro-5g-br-tela-6-67-120hz-8-256gb-cinza-prin-p5173",
+    "image": "https://d1r6yjixh9u0er.cloudfront.net/Custom/Content/Products/51/73/5173_smartphone-poco-x6-pro-5g-br-tela-6-67-120hz-8-256gb-cinza-prin_l2_638412776428412561.png",
+    "credit": "Xiaomi / POCO product image, Xiaomi Brasil"
+  },
+  "font": "SF, rendered with the installed macOS system font; font file not redistributed"
+}
