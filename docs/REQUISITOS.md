@@ -66,3 +66,9 @@ Para retirar los módulos nuevos sin borrar cuentas:
 ```
 
 Esto no desinstala el puente anterior que utiliza el modo de reutilización ni borra el token anónimo del catálogo. Consulta `README.md` y `docs/VALIDATION.md` para conocer las pruebas y los límites exactos.
+
+## Preparar la conexión USB desde una imagen
+
+La opción `patch-boot` acepta una imagen del port que ya arranca iOS y escribe una candidata nueva. Si no se da la ruta, abre un selector. Requiere LZ4 en PATH y los helpers de `build/usb`, incluidos en el ZIP preparado o compilables con un SDK iPhoneOS. El adaptador actual es para el layout HakiOS de Poco X6 Pro; no acepta cualquier boot.img de Android. Después de arrancarla, `usb-host` inicia el puente del Mac sin sustituir el de Apple. [Detalles](BOOT-USB.md).
+
+El cliente y los cuatro helpers del Mac soportan Intel y Apple Silicon de forma nativa. Se comprobaron ambas arquitecturas al compilar, pero falta la prueba física en un Mac Apple Silicon.

@@ -26,6 +26,34 @@ The local packaged ZIP includes the project's own compiled helpers. A checkout f
 
 `doctor --native-check` obtains anonymous validation data and signs a synthetic fixture on the Mac. It does not read your password or initiate account login.
 
+## Prepare an iOS boot image with the USB command service
+
+```sh
+# Source checkout: build the Mac and device helpers first.
+./hackicloud.sh build --ios-sdk "$(xcrun --sdk iphoneos --show-sdk-path)"
+# lz4 must be on PATH (Homebrew supports both /usr/local and /opt/homebrew).
+brew install lz4
+./hackicloud.sh patch-boot --image "/path/to/boot.img"
+# Omit --image to select the image with a macOS file picker.
+./hackicloud.sh patch-boot
+```
+
+Supply the **port-generated image that already boots iOS**, not a stock Android boot image or an IPSW. The current adapter supports the Poco X6 Pro HakiOS boot-v4/legacy-LZ4 layout with its embedded `redwood` APFS bootstrap. Its kernel must already implement `/dev/hakios-usbmux`, and its loader must enable `usb=2`. Other layouts and signed/AVB images are rejected with an explanation; this cannot add a missing hardware USB driver to an arbitrary kernel.
+
+The command writes a **new** `*-HackiCloud-USB.img` and a JSON checksum report. It adds the device USB daemon and its watchdog, updates their startup job, rebuilds and re-reads the bootstrap, and verifies file contents, ownership and permissions. It preserves the XNU kernel, first embedded disk, external-volume extent tables and Android fallback image. It does not flash, choose a boot slot, erase data or modify the input. Install the candidate using your port's established recovery procedure.
+
+This is our **USBMux command bridge**, comparable to the development access provided by ADB; it does not install Android's ADB protocol. It exposes local development commands to the physically connected host, so use it on your own development device.
+
+After booting the prepared image, start the host bridge in a separate terminal:
+
+```sh
+./hackicloud.sh usb-host
+```
+
+Leave it running, then use `doctor`, `install` and `run` in another terminal. HackiCloud automatically selects its private USB socket when present. It does not replace Apple's `/var/run/usbmuxd` or require disabling Apple's daemon. If your port already works through the system multiplexer, you can keep using it or explicitly select `--mux-socket /var/run/usbmuxd` before the command.
+
+All four Mac helpers, including the USB bridge, are built as **universal `x86_64` + `arm64`** binaries. Python and the image patcher do not depend on Intel paths or Rosetta. Apple Silicon compilation and signatures have been checked; physical Apple Silicon USB/sign-in testing is still pending. See [boot image details](docs/BOOT-USB.md).
+
 ## Use the existing HakiOS bridge
 
 This is the mode validated on the development phone. Stop the previous Mac provider before running this client; two providers must not compete for the same channels.

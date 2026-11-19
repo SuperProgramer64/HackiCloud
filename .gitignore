@@ -7,3 +7,7 @@ session.json
 *.log
 *.dSYM/
 *.zip
+
+*.img
+*.apfs
+*.ipsw

@@ -25,9 +25,11 @@ def build(sdk=None):
     if platform.system() != 'Darwin':
         raise RuntimeError('macOS is required')
     mac=ROOT/'build/mac';mac.mkdir(parents=True,exist_ok=True)
-    for name in ['anonymous_provider','settings_signer','catalog_provider']:
+    for name in ['anonymous_provider','settings_signer','catalog_provider','usb_host']:
         out=mac/name
-        checked(['xcrun','clang','-arch','arm64','-arch','x86_64','-mmacosx-version-min=13.0','-O2','-fobjc-arc','-fblocks','-framework','Foundation',str(ROOT/'native/mac'/(name+'.m')),'-o',str(out)])
+        source=ROOT/('native/usb/duchamp_usbmuxd.m' if name=='usb_host' else 'native/mac/'+name+'.m')
+        frameworks=['-framework','IOKit','-framework','IOUSBHost'] if name=='usb_host' else []
+        checked(['xcrun','clang','-arch','arm64','-arch','x86_64','-mmacosx-version-min=13.0','-O2','-fobjc-arc','-fblocks','-framework','Foundation']+frameworks+[str(source),'-o',str(out)])
         checked(['codesign','--force','--sign','-',str(out)])
         checked(['codesign','--verify','--strict',str(out)])
         checked(['lipo',str(out),'-verify_arch','arm64','x86_64'])
@@ -54,7 +56,14 @@ def build(sdk=None):
         if name=='catalog':signing+=['--entitlements',str(ROOT/'native/device/catalog-entitlements.plist')]
         checked(signing+[str(out)])
         checked(['codesign','--verify','--strict',str(out)])
-    print('Módulos ARM64 compilados. No se ha instalado ni reiniciado nada.')
+    usb=ROOT/'build/usb';usb.mkdir(parents=True,exist_ok=True)
+    for name in ['usbmuxd_dev','usbmux_watchdog']:
+        out=usb/name
+        frameworks=['-framework','CoreFoundation'] if name=='usbmuxd_dev' else []
+        checked(['xcrun','clang','-target','arm64-apple-ios16.0','-isysroot',str(sdk),'-O2','-Wall','-Wextra',str(ROOT/'native/usb'/(name+'.c'))]+frameworks+['-o',str(out)])
+        checked(['codesign','--force','--sign','-',str(out)])
+        checked(['codesign','--verify','--strict',str(out)])
+    print('Módulos ARM64 y servicio USB compilados. No se ha instalado ni reiniciado nada.')
 
 
 def upload(mux,path):
@@ -84,7 +93,7 @@ def upload(mux,path):
 
 
 def doctor(args):
-    print('HackiCloud 0.1.0 — comprobación local; no se leen cuentas ni contraseñas.')
+    print('HackiCloud 0.2.0 — comprobación local; no se leen cuentas ni contraseñas.')
     ok=platform.system()=='Darwin' and sys.version_info>=(3,9)
     print('macOS:', 'sí' if platform.system()=='Darwin' else 'no')
     print('Python >= 3.9:', 'sí' if sys.version_info>=(3,9) else 'no')
@@ -116,7 +125,7 @@ def legacy_sessions(mux):
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description='HackiCloud: puente local para iCloud desde Ajustes en HakiOS.')
-    parser.add_argument('--mux-socket',default=os.environ.get('HACKICLOUD_USBMUX_SOCKET','/var/run/usbmuxd'))
+    parser.add_argument('--mux-socket',default=os.environ.get('HACKICLOUD_USBMUX_SOCKET'))
     parser.add_argument('--device-id',type=int)
     parser.add_argument('--state-dir',default=str(Path.home()/'Library/Application Support/HackiCloud'))
     sub=parser.add_subparsers(dest='command',required=True)
@@ -125,8 +134,36 @@ def main(argv=None):
     i=sub.add_parser('install');i.add_argument('--restart-auth',action='store_true');i.add_argument('--dry-run',action='store_true');i.add_argument('--reuse-existing',action='store_true')
     r=sub.add_parser('run');r.add_argument('--minutes',type=int,default=120);r.add_argument('--reuse-existing',action='store_true')
     c=sub.add_parser('enable-catalog');c.add_argument('--storefront',default='us',help='Código de país de dos letras; por ejemplo us, es o ve')
+    sub.add_parser('usb-host',help='Iniciar el puente USB del Mac sin sustituir servicios del sistema')
+    patcher=sub.add_parser('patch-boot',help='Añadir el servicio USB a una imagen HakiOS compatible, sin flashear')
+    patcher.add_argument('--image',help='Imagen boot.img que ya arranca iOS en tu port; si falta se abre un selector')
+    patcher.add_argument('--output');patcher.add_argument('--ios-sdk')
     sub.add_parser('status');sub.add_parser('uninstall')
     args=parser.parse_args(argv)
+    from .usb_host import socket_path
+    if args.mux_socket is None:
+        private=socket_path(args.state_dir)
+        args.mux_socket=str(private) if private.exists() else '/var/run/usbmuxd'
+    if args.command=='usb-host':
+        from .usb_host import start
+        return start(args.state_dir)
+    if args.command=='patch-boot':
+        from .boot_image import patch
+        image=args.image
+        if not image:
+            image=subprocess.check_output(['osascript','-e','POSIX path of (choose file with prompt "Selecciona la imagen HakiOS que ya arranca iOS (boot.img)")'],text=True).strip()
+        source=Path(image).expanduser()
+        output=Path(args.output).expanduser() if args.output else source.with_name(source.stem+'-HackiCloud-USB.img')
+        report_path=output.with_suffix(output.suffix+'.json')
+        if output.exists() or report_path.exists():raise FileExistsError('Output image or report already exists')
+        if args.ios_sdk:build(args.ios_sdk)
+        try:report=patch(source,output,ROOT/'build/usb')
+        except ValueError as error:
+            print('HackiCloud: '+str(error),file=sys.stderr);return 1
+        with report_path.open('x') as f:json.dump(report,f,indent=2);f.write('\n')
+        print('Imagen USB preparada y verificada: '+str(output))
+        print('Kernel y discos externos conservados. No se ha flasheado el móvil.')
+        return 0
     if args.command=='doctor':return doctor(args)
     if args.command=='build':build(args.ios_sdk);return 0
     if args.command=='install'and args.dry_run:

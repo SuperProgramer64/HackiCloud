@@ -1,0 +1,10 @@
+{
+  "origin": "HakiOS tools/apfs from the local shared kernel checkout",
+  "upstream_commit": "685343c55f13819a93b1ab74bad790ab4ffe05e7",
+  "files": {
+    "apfs.py": "a051520d0c1f4f9d783c484be3beaeb536a1b4364fd8ed2e6a9b5c2d98592588",
+    "mkapfs.py": "b8afe3d1bb17466e4654dca4b8a5c9ec13a21f70dd6f01512b810da39c1ffc33"
+  },
+  "modifications": "none",
+  "license": "See LICENSE; tools are MIT licensed."
+}

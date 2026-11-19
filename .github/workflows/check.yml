@@ -1,0 +1,14 @@
+name: Build and test
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  mac:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: brew install lz4
+      - run: ./hackicloud.sh build --ios-sdk "$(xcrun --sdk iphoneos --show-sdk-path)"
+      - run: python3 -m unittest discover -s tests
+      - run: lipo build/mac/usb_host -verify_arch arm64 x86_64

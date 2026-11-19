@@ -14,3 +14,6 @@ The AuthKit interception point was studied using the public HakiOS kernel
 project, Martinvlba/hakios-xnu-kernel, commit cdc5541,
 userland/src/inject_akd.c. Transport, permissions, bounded message validation,
 Mac providers and catalog integration are implemented in this project's source.
+
+USB bridge source under native/usb is imported from this HakiOS development workspace, SPDX MIT.
+The APFS reader/writer under hackicloud/vendor/apfs is imported from HakiOS tools/apfs; its license is preserved alongside it. These are project tools, not Apple firmware or SDK files.
